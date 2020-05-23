@@ -2,14 +2,16 @@ from bs4 import BeautifulSoup
 import requests
 import csv
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Pool
 import time
 
 #################################################################
-APIkey = '&api_key=' + '--your api key--'
-keyword = "yeast"
-batch_max = 1000
-batch_size = 100  # <10,000
+from apikey import apikey   
+APIkey = apikey()                        #load_APIkey. Comment out this line!
+# APIkey = '&api_key= --your api key--'  #Set your API key
+keyword = "yeast"                        #set your keyword
+batch_max = 300000
+batch_size = 10000                         # < 10,000
 search_start = 0
 parallel = 4
 #################################################################
@@ -53,12 +55,12 @@ def get_data(retstart_num):
 def main():
 
     range_num = range(search_start,batch_max,batch_size)
-    with ThreadPoolExecutor(parallel) as executor:
-        results = [result for inner in list(executor.map(get_data, range_num)) for result in inner]
+    with Pool(parallel) as p:
+        results = [result for inner in p.map(get_data, range_num) for result in inner]
     results_arr = np.array(results)
     results_arr = results_arr.reshape([int(len(results_arr)/5), 5])
     
-    with open('article_data.csv', 'w', newline='', encoding='utf-8') as f:
+    with open('output/article_data_'+keyword+'.csv', 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         writer.writerows(results_arr)
 
